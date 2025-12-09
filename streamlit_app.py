@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+
+st.set_page_config(page_title="Predicting Diabetes using the Framingham Heart Study ", layout="wide")
 # project name
 
 # research question
