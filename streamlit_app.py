@@ -23,16 +23,25 @@ with st.expander ('Selected Columns'):
     data = pd.read_csv('https://raw.githubusercontent.com/LUCE-Blockchain/Databases-for-teaching/refs/heads/main/Framingham%20Dataset.csv')
     data.head()
     data_raw = data.copy(deep=True) #so the data keeps it original state
-    selected_columns = [
+    relevant_columns = [
     'AGE', 'SEX', 'TOTCHOL', 'SYSBP', 'DIABP', 'CURSMOKE', 'CIGPDAY', 'BMI',
     'BPMEDS', 'PREVCHD', 'PREVAP', 'PREVMI', 'PREVSTRK', 'PREVHYP', 'GLUCOSE',
     'HYPERTEN', 'DIABETES']
-    df = data[selected_columns]
+    df = data[relevant_columns]
     st.dataframe(df, use_container_width=True, height=300)
+
+#Separating data in features (x) and target (y)
+df_relevant = data[relevant_columns]
+X = df_relevant.drop('DIABETES', axis=1)
+y = df_relevant['DIABETES']
 
 st.markdown('## Train-Test Split')
 with st.expander ('# Train-Test Split'):
-    st.info('We .....')
+    st.info('We split the dataset into a training and a testing set, using a 70-30 split.')
+
+# splitting data set
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
 st.markdown('## Identifying Problems in the Basic Data')
 with st.expander ('# Missing Values'):
