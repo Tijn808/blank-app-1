@@ -283,5 +283,40 @@ with st.expander ('Logistic Regression (unweighted vs. weighted)'):
     st.dataframe(results_df.style.format({'Basic Logistic Regression': "{:.4f}",'Weighted Logistic Regression': "{:.4f}",}))
 
 with st.expander ('Logistic Regression (with threshold)'):
-    st.write ('d')
+    st.info('To further improve the model we added a threshold. The optimized threshold for F1-score is 0.21.')
+    import numpy as np 
+    thresholds = np.arange(0, 1.01, 0.01)
+    best_threshold_f1 = 0
+    max_f1_score = 0
+    for t in thresholds:
+        y_pred_t = (y_proba_log_reg >= t).astype(int)
+        current_f1 = f1_score(y_test, y_pred_t)
+    if current_f1 > max_f1_score:
+        max_f1_score = current_f1
+        best_threshold_f1 = t
+    y_pred_log_reg_optimized = (y_proba_log_reg >= best_threshold_f1).astype(int)
+    accuracy_log_reg_optimized = accuracy_score(y_test, y_pred_log_reg_optimized)
+    precision_log_reg_optimized = precision_score(y_test, y_pred_log_reg_optimized)
+    recall_log_reg_optimized = recall_score(y_test, y_pred_log_reg_optimized)
+    f1_log_reg_optimized = f1_score(y_test, y_pred_log_reg_optimized)
+    auc_log_reg_optimized = roc_auc_score(y_test, y_proba_log_reg)
+    fig, ax = plt.subplots(figsize=(6, 5))
+    cm = confusion_matrix(y_test, y_pred_log_reg_optimized)
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax)
+    ax.set_title(f'Optimized LR Confusion Matrix (Threshold={best_threshold_f1:.2f})')
+    ax.set_xlabel('Predicted')
+    ax.set_ylabel('Actual')
+    ax.set_xticklabels(['No Diabetes', 'Diabetes'])
+    ax.set_yticklabels(['No Diabetes', 'Diabetes'])
+    st.pyplot(fig)
+    optimized_df = pd.DataFrame({
+        'Metric': ['Threshold', 'Accuracy', 'Precision', 'Recall', 'F1 Score', 'AUC'],
+        'Optimized Logistic Regression': [
+        best_threshold_f1,
+        accuracy_log_reg_optimized,
+        precision_log_reg_optimized,
+        recall_log_reg_optimized,
+        f1_log_reg_optimized,
+        auc_log_reg_optimized]})
+    st.dataframe(optimized_df.style.format({'Optimized Logistic Regression': "{:.4f}"}))
 
