@@ -174,21 +174,114 @@ with st.expander ('Data Distributions'):
         ax.set_xticklabels(['No Diabetes', 'Diabetes'])
         st.pyplot(fig)
 
-with st.expander ('Boxplots of after capping'):
+with st.expander ('Boxplots after capping'):
     st.markdown('#### Boxplots after capping')
     capped_columns = ['SYSBP', 'DIABP', 'TOTCHOL', 'BMI']
-    n_cols = 2 
-    n_rows = len(capped_columns)
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(12, 4 * n_rows))
-    fig.suptitle('Boxplots of Numerical Features Before and After Capping', y=1.02, fontsize=16)
-    for i, col in enumerate(capped_columns):
-        sns.boxplot(y=X_train[col], ax=axes[i, 0])
-        axes[i, 0].set_title(f'{col} - Before Capping')
-        axes[i, 0].set_ylabel(col)
-        sns.boxplot(y=X_train_capped[col], ax=axes[i, 1])
-        axes[i, 1].set_title(f'{col} - After Capping')
-        axes[i, 1].set_ylabel(col)
+    selected_col = st.selectbox('Select a column to see before & after capping:', capped_columns)
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    fig.suptitle(f'Boxplot of {selected_col} - Before and After Capping', fontsize=16, y=1.05)
+    sns.boxplot(y=X_train[selected_col], ax=axes[0])
+    axes[0].set_title(f'{selected_col} - Before Capping')
+    axes[0].set_ylabel(selected_col)
+    sns.boxplot(y=X_train_capped[selected_col], ax=axes[1])
+    axes[1].set_title(f'{selected_col} - After Capping')
+    axes[1].set_ylabel(selected_col)
     plt.tight_layout() 
     st.pyplot(fig)
 
-       #MAKE IT DROPCHOICE
+# More standardization?
+numerical_cols_for_scaling = ['AGE', 'TOTCHOL', 'SYSBP', 'DIABP', 'CIGPDAY', 'BMI', 'GLUCOSE']
+binary_cols_for_passthrough = ['SEX', 'CURSMOKE', 'BPMEDS', 'PREVCHD', 'PREVAP', 'PREVMI', 'PREVSTRK', 'PREVHYP', 'HYPERTEN', 'GLUCOSE_missing']
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', StandardScaler(), numerical_cols_for_scaling),
+        ('bin', 'passthrough', binary_cols_for_passthrough)
+    ])
+X_train_processed_array = preprocessor.fit_transform(X_train_capped)
+X_test_processed_array = preprocessor.transform(X_test_capped)
+processed_feature_names = numerical_cols_for_scaling + binary_cols_for_passthrough
+X_train_processed = pd.DataFrame(X_train_processed_array, columns=processed_feature_names, index=X_train_capped.index)
+X_test_processed = pd.DataFrame(X_test_processed_array, columns=processed_feature_names, index=X_test_capped.index)
+
+#Logistic Regression
+st.markdown('## Model Training')
+with st.expander ('Logistic Regression (unweighted vs. weighted)'):
+    st.info('We started with training a logistic regression model to predict diabetes. We also trained a weighted logistic regression model to account for the class imbalance in the data.')
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+    # unweighted model
+    log_reg_model = LogisticRegression(random_state=42, solver='liblinear') 
+    log_reg_model.fit(X_train_processed, y_train)
+    y_pred_log_reg = log_reg_model.predict(X_test_processed)
+    y_proba_log_reg = log_reg_model.predict_proba(X_test_processed)[:, 1]
+    accuracy_log_reg = accuracy_score(y_test, y_pred_log_reg)
+    precision_log_reg = precision_score(y_test, y_pred_log_reg)
+    recall_log_reg = recall_score(y_test, y_pred_log_reg)
+    f1_log_reg = f1_score(y_test, y_pred_log_reg)
+    auc_log_reg = roc_auc_score(y_test, y_proba_log_reg)
+    # weighted model
+    log_reg_weighted_model = LogisticRegression(random_state=42, class_weight='balanced', solver='liblinear')
+    log_reg_weighted_model.fit(X_train_processed, y_train)
+    y_pred_log_reg_weighted = log_reg_weighted_model.predict(X_test_processed)
+    y_proba_log_reg_weighted = log_reg_weighted_model.predict_proba(X_test_processed)[:, 1]
+    accuracy_log_reg_weighted = accuracy_score(y_test, y_pred_log_reg_weighted)
+    precision_log_reg_weighted = precision_score(y_test, y_pred_log_reg_weighted)
+    recall_log_reg_weighted = recall_score(y_test, y_pred_log_reg_weighted)
+    f1_log_reg_weighted = f1_score(y_test, y_pred_log_reg_weighted)
+    auc_log_reg_weighted = roc_auc_score(y_test, y_proba_log_reg_weighted)
+    #comparison
+    from sklearn.metrics import confusion_matrix
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+    fig.suptitle('Model Performance Comparison: Basic vs. Weighted Logistic Regression', fontsize=16)
+    cm_log_reg = confusion_matrix(y_test, y_pred_log_reg)
+    sns.heatmap(cm_log_reg, annot=True, fmt='d', cmap='Blues', ax=axes[0])
+    axes[0].set_title('Basic LR: Confusion Matrix')
+    axes[0].set_xlabel('Predicted')
+    axes[0].set_ylabel('Actual')
+    axes[0].set_xticklabels(['No Diabetes', 'Diabetes'])
+    axes[0].set_yticklabels(['No Diabetes', 'Diabetes'])
+    cm_log_reg_weighted = confusion_matrix(y_test, y_pred_log_reg_weighted)
+    sns.heatmap(cm_log_reg_weighted, annot=True, fmt='d', cmap='Blues', ax=axes[1])
+    axes[1].set_title('Weighted LR: Confusion Matrix')
+    axes[1].set_xlabel('Predicted')
+    axes[1].set_ylabel('Actual')
+    axes[1].set_xticklabels(['No Diabetes', 'Diabetes'])
+    axes[1].set_yticklabels(['No Diabetes', 'Diabetes'])
+    plt.tight_layout()
+    st.pyplot(fig)
+    #Show metrics
+    from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+    y_pred_log_reg = log_reg_model.predict(X_test_processed)
+    y_proba_log_reg = log_reg_model.predict_proba(X_test_processed)[:, 1]
+    accuracy_log_reg = accuracy_score(y_test, y_pred_log_reg)
+    precision_log_reg = precision_score(y_test, y_pred_log_reg)
+    recall_log_reg = recall_score(y_test, y_pred_log_reg)
+    f1_log_reg = f1_score(y_test, y_pred_log_reg)
+    auc_log_reg = roc_auc_score(y_test, y_proba_log_reg)
+    
+    y_pred_log_reg_weighted = log_reg_weighted_model.predict(X_test_processed)
+    y_proba_log_reg_weighted = log_reg_weighted_model.predict_proba(X_test_processed)[:, 1]
+    accuracy_log_reg_weighted = accuracy_score(y_test, y_pred_log_reg_weighted)
+    precision_log_reg_weighted = precision_score(y_test, y_pred_log_reg_weighted)
+    recall_log_reg_weighted = recall_score(y_test, y_pred_log_reg_weighted)
+    f1_log_reg_weighted = f1_score(y_test, y_pred_log_reg_weighted)
+    auc_log_reg_weighted = roc_auc_score(y_test, y_proba_log_reg_weighted)
+    results_df = pd.DataFrame({
+    'Metric': ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'AUC'],
+    'Basic Logistic Regression': [accuracy_log_reg,
+        precision_log_reg,
+        recall_log_reg,
+        f1_log_reg,
+        auc_log_reg],
+    'Weighted Logistic Regression': [
+        accuracy_log_reg_weighted,
+        precision_log_reg_weighted,
+        recall_log_reg_weighted,
+        f1_log_reg_weighted,
+        auc_log_reg_weighted]})
+    st.markdown("#### Model Performance Comparison Table")
+    st.dataframe(results_df.style.format({'Basic Logistic Regression': "{:.4f}",'Weighted Logistic Regression': "{:.4f}",}))
+
+with st.expander ('Logistic Regression (with threshold)'):
+    st.write ('d')
+
