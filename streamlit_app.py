@@ -1,6 +1,9 @@
 import streamlit as st
 import pandas as pd
 
+st.markdown('# Diabetes Risk Prediction using the Framingham Heart Study Dataset')
+st.divider()
+
 st.set_page_config(page_title="Predicting Diabetes using the Framingham Heart Study ", layout="wide")
 # project name
 
@@ -291,8 +294,7 @@ with st.expander ('Logistic Regression (unweighted vs. weighted)'):
     st.markdown("#### Logistic Regression Comparison Table")
     st.dataframe(results_df.style.format({'Basic Logistic Regression': "{:.4f}",'Weighted Logistic Regression': "{:.4f}",}))
 
-with st.expander ('Logistic Regression (with threshold)'):
-    st.info('To further improve the model we added a threshold. The optimized threshold for F1-score is 0.21.')
+with st.expander ('Optimized Logistic Regression'):
     import numpy as np 
     thresholds = np.arange(0, 1.01, 0.01)
     best_threshold_f1 = 0
@@ -300,9 +302,9 @@ with st.expander ('Logistic Regression (with threshold)'):
     for t in thresholds:
         y_pred_t = (y_proba_log_reg >= t).astype(int)
         current_f1 = f1_score(y_test, y_pred_t)
-    if current_f1 > max_f1_score:
-        max_f1_score = current_f1
-        best_threshold_f1 = t
+        if current_f1 > max_f1_score:
+            max_f1_score = current_f1
+            best_threshold_f1 = t
     y_pred_log_reg_optimized = (y_proba_log_reg >= best_threshold_f1).astype(int)
     accuracy_log_reg_optimized = accuracy_score(y_test, y_pred_log_reg_optimized)
     precision_log_reg_optimized = precision_score(y_test, y_pred_log_reg_optimized)
@@ -318,9 +320,10 @@ with st.expander ('Logistic Regression (with threshold)'):
     ax.set_xticklabels(['No Diabetes', 'Diabetes'])
     ax.set_yticklabels(['No Diabetes', 'Diabetes'])
     st.pyplot(fig)
+    #metrics
     optimized_df = pd.DataFrame({
-        'Metric': ['Threshold', 'Accuracy', 'Precision', 'Recall', 'F1 Score', 'AUC'],
-        'Optimized Logistic Regression': [
+    'Metric': ['Threshold', 'Accuracy', 'Precision', 'Recall', 'F1 Score', 'AUC'],
+    'Optimized Logistic Regression': [
         best_threshold_f1,
         accuracy_log_reg_optimized,
         precision_log_reg_optimized,
@@ -386,7 +389,7 @@ with st.expander ('Decision Tree'):
     st.markdown('#### Decision Tree Comparison Table')
     st.dataframe(decisiontree_df.style.format({'Model Performance Comparison Table': "{:.4f}"}))
 
-with st.expander('Decision Tree (with threshold)'):
+with st.expander('Optimized Decision Tree'):
     thresholds = np.arange(0, 1.01, 0.01)   
     best_threshold_f1_dt = 0
     max_f1_score_dt = 0
@@ -485,7 +488,7 @@ with st.expander('Random Forest'):
         'Basic Random Forest': "{:.4f}",
         'Weighted Random Forest': "{:.4f}"}))
 
-with st.expander('Random Forest with Threshold'):
+with st.expander('Optimized Random Forest'):
     st.write('????? tuning or threshold')
 
 with st.expander('LightGBM with Focal Loss'):
