@@ -148,7 +148,7 @@ with st.expander ('Data Distributions'):
             print("No categorical columns found for plotting.")
         else:
             selected_col = st.selectbox('Select a categorical column to visualize:', categorical_cols_present)
-            fig, ax = plt.subplots(figsize=(6, 4))
+            fig, ax = plt.subplots(figsize=(4, 3))
             sns.countplot(x=X_train_processed[selected_col], ax=ax)
             ax.set_title(f"Distribution of {selected_col}")
             ax.set_xlabel(selected_col)
@@ -163,7 +163,7 @@ with st.expander ('Data Distributions'):
             print("No numerical columns found for plotting.")
         else:
             selected_col = st.selectbox('Select a numerical column to visualize:', numerical_cols_present)
-            fig, ax = plt.subplots(figsize=(6, 4))
+            fig, ax = plt.subplots(figsize=(4, 3))
             sns.histplot(X_train_processed[selected_col], kde=True, ax=ax)
             ax.set_title(f"Distribution of {selected_col}")
             ax.set_xlabel(selected_col)
@@ -177,7 +177,7 @@ with st.expander ('Data Distributions'):
             y_train_series = y_train.iloc[:, 0]
         else:
             y_train_series = y_train
-        fig, ax = plt.subplots(figsize=(6, 4))  # << assign to fig!
+        fig, ax = plt.subplots(figsize=(4, 3))  # << assign to fig!
         sns.countplot(x=y_train_series, ax=ax)
         ax.set_title('Distribution of DIABETES in Training Data')
         ax.set_xlabel('DIABETES (0: No Diabetes, 1: Diabetes)')
